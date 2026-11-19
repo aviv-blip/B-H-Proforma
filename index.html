@@ -89,6 +89,8 @@ input.empty{border-color:var(--warn)}
   border:1px solid var(--border-strong);border-radius:5px;padding:2px 6px;cursor:pointer;margin-top:5px}
 .mini:hover{border-color:var(--accent)}
 .hint{font-size:12px;color:var(--fg-muted);margin-top:12px;max-width:66ch}
+.grp-label{font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--fg-muted);margin-top:18px}
 
 /* inline answers */
 .answer{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;
@@ -109,12 +111,6 @@ input.empty{border-color:var(--warn)}
 .pos{color:var(--pos)} .neg{color:var(--neg)} .warnc{color:var(--warn)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
 @media (max-width:660px){.two{grid-template-columns:1fr}.step-head .meta{margin-left:0;width:100%}}
-.flags{margin-top:14px;display:flex;flex-direction:column;gap:8px}
-.flag{display:flex;gap:10px;font-size:13px;border-radius:8px;padding:10px 12px;border:1px solid var(--border)}
-.flag .tag{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap;padding-top:2px}
-.flag.bad{background:var(--neg-bg)} .flag.bad .tag{color:var(--neg)}
-.flag.mid{background:var(--warn-bg)} .flag.mid .tag{color:var(--warn)}
-.flag.ok{background:var(--pos-bg)} .flag.ok .tag{color:var(--pos)}
 .seg{display:inline-flex;border:1px solid var(--border-strong);border-radius:8px;overflow:hidden}
 .seg button{font-family:var(--font-sans);font-size:13px;font-weight:500;padding:8px 16px;border:0;
   background:transparent;color:var(--fg-2);cursor:pointer}
@@ -170,13 +166,17 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
             <input type="number" id="arv" data-src="y" value="325000" step="1000"></div>
           <div class="f-group"><div class="lbl"><label for="rent">Market rent ($ / mo)</label></div>
             <input type="number" id="rent" data-src="y" value="3000" step="25"></div>
-          <div class="f-group"><div class="lbl"><label for="units">Units</label></div>
-            <input type="number" id="units" data-src="y" value="1" step="1"></div>
+        </div>
+        <div class="grp-label">Annual carrying costs — the two deductions in your cap rate</div>
+        <div class="grid" style="margin-top:7px;max-width:470px">
           <div class="f-group"><div class="lbl"><label for="taxyr">Property tax ($ / yr)</label></div>
             <input type="number" id="taxyr" data-src="a" value="7150" step="100">
-            <button class="mini" type="button" id="tax-est">Estimate at 2.2% of ARV</button>
-            <div class="sub-note">Use the county's <b>un-exempted</b> figure. The homestead exemption and appraisal cap drop when Paragon takes title as an LLC.</div></div>
+            <button class="mini" type="button" id="tax-est">Estimate at 2.2% of ARV</button></div>
+          <div class="f-group"><div class="lbl"><label for="inslandlord">Insurance ($ / yr)</label></div>
+            <input type="number" id="inslandlord" data-src="a" value="2000" step="100"></div>
         </div>
+        <div class="sub-note" style="max-width:64ch">Use the county's <b>un-exempted</b> tax figure — the homestead exemption and appraisal cap drop when Paragon takes title as an LLC. Insurance covers both the hold and the rental.</div>
+        <div class="answer" id="prop-answer"></div>
       </div>
     </section>
 
@@ -206,10 +206,6 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
             <input type="number" id="docprep" data-src="a" value="995" step="50"></div>
           <div class="f-group"><div class="lbl"><label for="buyclose">Buy-side title ($)</label></div>
             <input type="number" id="buyclose" data-src="a" value="3200" step="100"></div>
-          <div class="f-group"><div class="lbl"><label for="insvac">Vacant insurance ($ / yr)</label></div>
-            <input type="number" id="insvac" data-src="a" value="2000" step="100"></div>
-          <div class="f-group"><div class="lbl"><label for="utilhold">Utilities in hold ($ / mo)</label></div>
-            <input type="number" id="utilhold" data-src="a" value="150" step="25"></div>
         </div>
         <div class="answer" id="acq-answer"></div>
       </div>
@@ -249,12 +245,8 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
       <div class="step-why">The percentages are reserves, not bills. They're what turns a rent number into a cash flow number you can trust.</div>
       <div class="step-body">
         <div class="grid">
-          <div class="f-group"><div class="lbl"><label for="inslandlord">Landlord insurance ($ / yr)</label></div>
-            <input type="number" id="inslandlord" data-src="a" value="2000" step="100"></div>
           <div class="f-group"><div class="lbl"><label for="hoayr">HOA dues ($ / yr)</label></div>
             <input type="number" id="hoayr" data-src="a" value="0" step="50"></div>
-          <div class="f-group"><div class="lbl"><label for="other">Other income ($ / mo)</label></div>
-            <input type="number" id="other" data-src="a" value="0" step="10"></div>
           <div class="f-group"><div class="lbl"><label for="vac">Vacancy (%)</label></div>
             <input type="number" id="vac" data-src="a" value="8" step="1"></div>
           <div class="f-group"><div class="lbl"><label for="pm">Management (%)</label></div>
@@ -263,8 +255,6 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
             <input type="number" id="maint" data-src="a" value="7" step="1"></div>
           <div class="f-group"><div class="lbl"><label for="capex">CapEx reserve (%)</label></div>
             <input type="number" id="capex" data-src="a" value="7" step="1"></div>
-          <div class="f-group"><div class="lbl"><label for="utilm">Owner utilities ($ / mo)</label></div>
-            <input type="number" id="utilm" data-src="a" value="0" step="25"></div>
           <div class="f-group"><div class="lbl"><label for="miscm">Lawn / misc ($ / mo)</label></div>
             <input type="number" id="miscm" data-src="a" value="0" step="25"></div>
         </div>
@@ -274,7 +264,6 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
   </div>
 
   <h2 class="sec">The numbers</h2>
-  <div class="flags" id="flags"></div>
 
   <div class="two">
     <div class="stmt"><h3>Cash required to acquire</h3><div id="s1"></div></div>
@@ -293,9 +282,13 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
   <div class="toolbar">
     <button class="act" id="copy" type="button">Copy full summary</button>
     <button class="act" id="copyshort" type="button">Copy headline</button>
+    <button class="act" id="dlcsv" type="button">Download spreadsheet</button>
+    <button class="act" id="dltxt" type="button">Download summary</button>
     <button class="act" id="clear" type="button">Clear all fields</button>
     <span class="sub-note" id="copied" style="margin:0"></span>
   </div>
+
+  <div class="sub-note" style="max-width:64ch">The spreadsheet opens in Excel or Numbers. On claude.ai you'll be asked to confirm the save; on your own site it downloads straight away.</div>
 
   <footer>
     Vendors: Avant National Title (Jacob Echols) · Boomerang Finance · Goosehead (Joseph Christy). Title, insurance and refinance figures are estimates until the net sheet, binder and term sheet land. Legal determinations stay with Jacob.
@@ -304,9 +297,9 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
 
 <script>
 (function(){
-  var ids=['purchase','rehab','months','arv','ltv','rehabfin','pts','rate','docprep','buyclose','insvac','utilhold',
+  var ids=['purchase','rehab','months','arv','ltv','rehabfin','pts','rate','docprep','buyclose',
            'refiltv','refirate','refiterm','refipts','reficlose','tdscr',
-           'rent','units','other','taxyr','inslandlord','hoayr','vac','pm','maint','capex','utilm','miscm'];
+           'rent','taxyr','inslandlord','hoayr','vac','pm','maint','capex','miscm'];
   function el(id){return document.getElementById(id);}
   function v(id){return parseFloat(el(id).value)||0;}
   function money(n){var s='$'+Math.abs(Math.round(n)).toLocaleString('en-US');return n<0?'−'+s:s;}
@@ -354,12 +347,13 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
   function calc(){
     var purchase=v('purchase'),rehab=v('rehab'),months=v('months'),arv=v('arv'),
         ltv=v('ltv'),rehabfin=v('rehabfin'),pts=v('pts'),rate=v('rate'),docprep=v('docprep'),
-        buyclose=v('buyclose'),insvac=v('insvac'),utilhold=v('utilhold'),
+        buyclose=v('buyclose'),
         refiltv=v('refiltv'),refirate=v('refirate'),refiterm=v('refiterm'),refipts=v('refipts'),
         reficlose=v('reficlose'),tdscr=v('tdscr'),
-        rent=v('rent'),units=Math.max(1,v('units')),other=v('other'),taxyr=v('taxyr'),
+        rent=v('rent'),taxyr=v('taxyr'),
         insll=v('inslandlord'),hoayr=v('hoayr'),
-        vac=v('vac'),pmp=v('pm'),maintp=v('maint'),capexp=v('capex'),utilm=v('utilm'),miscm=v('miscm');
+        vac=v('vac'),pmp=v('pm'),maintp=v('maint'),capexp=v('capex'),miscm=v('miscm');
+    var units=1, other=0, utilm=0, utilhold=0, insvac=insll;
 
     // 01 acquisition — computed for both methods so each can be read against the other
     var isCash=(method==='cash');
@@ -476,6 +470,11 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
         '<div class="g-foot">Green is the figure, not a verdict — anything negative or off-target turns red or amber. '+
         assumed+' field'+(assumed===1?' is':'s are')+' still carrying an assumed default.</div>';
     }
+    el('prop-answer').innerHTML=
+      tile('Annual income',money(gross*12),'',money(gross)+' / mo')+
+      tile('Less tax + insurance',money(taxyr+insll),'neg',money((taxyr+insll)/12)+' / mo')+
+      tile('Income after tax &amp; ins',money(incAfterFixed),'','the cap rate numerator')+
+      tile('Cap on purchase + rehab',pct(capPurch),'','÷ '+money(capBase));
     el('ops-answer').innerHTML=
       tile('Monthly cash flow',money(cf),cf>=0?'pos':'neg',money(cf*12)+' per year')+
       tile('NOI',money(noi),noi>=0?'pos':'neg',money(noi*12)+' per year')+
@@ -542,9 +541,8 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
     h+=row('Lost over the '+months+'-month hold — no rent coming in',null,{head:true});
     if(!isCash)h+=row('Hard money interest ('+months+' mo @ '+rate+'%)',money(hmInterest));
     h+=row('Property tax ('+months+' mo)',money(taxHold));
-    h+=row('Vacant-dwelling insurance ('+months+' mo)',money(insHold));
+    h+=row('Insurance ('+months+' mo)',money(insHold));
     if(hoaHold>0)h+=row('HOA dues ('+months+' mo)',money(hoaHold));
-    h+=row('Utilities ('+months+' mo)',money(utilHold));
     h+=row('Holding loss subtotal',money(burn),{total:true,c:'neg'});
     h+=row('Burn per month of delay',money(burnMo),{c:'neg'});
     h+=row('Cash required to acquire',money(cashAcq),{total:true});
@@ -656,35 +654,6 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
     });
     el('s2b').innerHTML=th+'</tbody>';
 
-    // flags
-    var fl=[];
-    if(missing.length)fl.push(['mid','Incomplete','Still missing '+missing.join(', ')+'. Everything below is computed from zero until those are in.']);
-    if(cf<0)fl.push(['bad','Negative','Rents at a monthly loss of '+money(Math.abs(cf))+'. Rent has to reach '+money(beRent)+' per unit, or the loan has to drop to '+money(maxLoanBE)+', before it carries itself.']);
-    else if(cf<100*units)fl.push(['mid','Thin','Cash flow of '+money(cf)+' leaves no room for one bad turnover. A single vacancy plus a make-ready wipes out a year of it.']);
-    if(!refiOn&&hmLoan>0)fl.push(['bad','Bridge debt','No refinance is modeled, so '+money(hmLoan)+
-      ' of hard money stays outstanding at '+rate+'% interest-only — '+money(pay)+
-      ' a month, with the balance still due at the end of the term. Hard money is not hold debt; this only works as a stopgap.']);
-    if(!refiOn&&hmLoan===0)fl.push(['ok','Free and clear','No loan on the property, so the rent carries no debt service. All '+
-      money(cashAcq)+' stays in the deal, and the return on it is whatever the rent produces.']);
-    if(refiOn&&lDscr<tdscr)fl.push(['bad','Financing','Lender DSCR of '+lDscr.toFixed(2)+'× is under your '+tdscr.toFixed(2)+'× floor, so '+money(newLoan)+' does not get approved at this rent. The loan has to come down to about '+money(maxLoanDscr)+' ('+pct(ltvDscr,0)+' LTV).']);
-    if(refiOn&&proceeds<0)fl.push(['bad','Refi gap','The refinance does not cover the hard money payoff and its own costs — you bring '+money(Math.abs(proceeds))+' to that closing on top of the cash already in.']);
-    if(refiOn&&cashLeft<=0)fl.push(['ok','Full recapture','The refi returns everything you put in, so cash-on-cash is unbounded. Confirm the appraisal supports '+money(arv)+' first.']);
-    else if(refiOn&&arv>0&&allIn/arv>0.80)fl.push(['mid','Basis too high','All-in is '+pct(allIn/arv*100)+' of ARV, so a '+refiltv+'% loan cannot repay it — that gap is why '+money(cashLeft)+' stays in. A full recapture here needs an all-in near '+money(arv*refiltv/100)+'.']);
-    if(refiOn&&maxLoanBE<newLoan)fl.push(['mid','Leverage ceiling','At '+refirate+'% this rent only carries about '+money(maxLoanBE)+' ('+pct(ltvBE,0)+' LTV) at break-even. Above that you are buying capital back with monthly cash flow.']);
-    if(!isCash&&dOut!==0)fl.push(['mid','Cost of the float','Hard money costs '+money(Math.abs(dOut))+
-      ' more than buying cash, and saves you floating '+money(Math.abs(dUp))+' for '+months+
-      ' months — about '+pct(Math.abs(dUp)>0?(Math.abs(dOut)/Math.abs(dUp))*(12/Math.max(months,0.5))*100:0)+
-      ' annualized on money you did not have to put up.']);
-    if(refiOn&&isCash)fl.push(['mid','Delayed financing','Buying cash can qualify for a delayed-financing cash-out, but many lenders cap it at your documented cost rather than appraised value until 6 months of seasoning. Confirm which basis applies before counting on '+money(newLoan)+'.']);
-    if(burn>0)fl.push(['mid','Holding loss','The property loses '+money(burn)+' over the '+months+
-      '-month hold — '+money(burnMo)+' every month it sits with no rent. Each extra month of rehab or lease-up adds that much to your basis, so the timeline is worth as much as the budget.']);
-    if(refiOn&&months<6)fl.push(['mid','Seasoning','A '+months+'-month hold may not meet the lender’s seasoning rule for cash-out at full appraised value; some price off purchase price until 6–12 months.']);
-    if(v('capex')===0||v('vac')===0)fl.push(['mid','Understated','Vacancy or CapEx is zero. The cash flow above is not a number to underwrite against until both carry a real reserve.']);
-    if(el('taxyr').dataset.src!=='y')fl.push(['mid','Tax estimate','Property tax is still an estimate. Pull the county’s un-exempted assessed value — at this margin that one field decides whether the deal is positive or negative.']);
-    var na=ids.filter(function(id){return el(id).dataset.src!=='y';});
-    if(na.length)fl.push(['mid','Assumptions',na.length+' field'+(na.length===1?' is':'s are')+' still carrying a default rather than a confirmed figure. Each one you overwrite turns green.']);
-    el('flags').innerHTML=fl.map(function(f){
-      return '<div class="flag '+f[0]+'"><span class="tag">'+f[1]+'</span><span>'+f[2]+'</span></div>';}).join('');
 
     function padr(t,n){t=String(t);return t.length>=n?t:t+new Array(n-t.length+1).join(' ');}
     function padl(t,n){t=String(t);return t.length>=n?t:new Array(n-t.length+1).join(' ')+t;}
@@ -707,6 +676,92 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
         'Cap on purchase+rehab '+pct(capPurch)+' \u00b7 all-in '+money(allIn)+
           ' ('+pct(arv>0?allIn/arv*100:0)+' of ARV)'
       ].join('\n');};
+    window.__csv=function(){
+      var r=[];
+      function R(a,b){r.push([a,(b===undefined||b===null)?'':b]);}
+      function M(n){return Math.round(n);}
+      R('Buy & hold pro forma',el('prop').value||'Untitled deal');
+      R('Date',new Date().toISOString().slice(0,10));
+      R('Acquisition',isCash?'All cash':'Hard money');
+      R('Refinance',refiOn?'Yes':'No');
+      R('','');
+      R('THE PROPERTY','');
+      R('Purchase price',M(purchase));
+      R('Rehab budget',M(rehab));
+      R('Purchase + rehab',M(capBase));
+      R('All-in incl. closing',M(allIn));
+      R('All-in as % of ARV',(arv>0?(allIn/arv*100).toFixed(1):''));
+      R('ARV / appraised',M(arv));
+      R('Property tax per year',M(taxyr));
+      R('Insurance per year',M(insll));
+      R('','');
+      R('ACQUISITION','');
+      if(!isCash){
+        R('Hard money loan',M(hmLoan));
+        R('Loan-to-price %',ltv);
+        R('Origination',M(orig));
+        R('Doc prep',M(docprepEff));
+        R('Hard money interest',M(hmInterest));
+      }
+      R('Down payment / cash for property',M(down));
+      R('Rehab out of pocket',M(rehabCash));
+      R('Buy-side title',M(buyclose));
+      R('Capital subtotal',M(capital));
+      R('Fees subtotal',M(fees));
+      R('Holding loss subtotal',M(burn));
+      R('Burn per month',M(burnMo));
+      R('Months held',months);
+      R('Cash required to acquire',M(cashAcq));
+      R('','');
+      R(refiOn?'THE REFINANCE':'NO REFINANCE','');
+      if(refiOn){
+        R('Refi LTV %',refiltv);
+        R('New loan',M(newLoan));
+        R('Refi rate %',refirate);
+        R('Amortization years',refiterm);
+        R('Refi points',M(refiPtsCost));
+        R('Refi closing',M(reficloseEff));
+        R('Hard money payoff',M(hmLoan));
+        R('Cash back at refi',M(proceeds));
+      } else {
+        R('Debt outstanding',M(hmLoan));
+      }
+      R('Out of pocket at the end',M(cashLeft));
+      R('Equity in the property',M(equity));
+      R('Monthly P&I / interest',M(pay));
+      R(piLabel,M(pitia));
+      R('Lender DSCR',isFinite(lDscr)?lDscr.toFixed(2):'');
+      R('','');
+      R('MONTHLY OPERATION','');
+      R('Gross rent',M(gross));
+      R('Vacancy loss',M(vacLoss));
+      R('Effective gross income',M(egi));
+      R('Management',M(pmFee));
+      R('Maintenance',M(maint));
+      R('CapEx reserve',M(capex));
+      R('Property tax',M(taxM));
+      R('Insurance',M(insM));
+      if(hoaM>0)R('HOA dues',M(hoaM));
+      if(miscm>0)R('Lawn / misc',M(miscm));
+      R('Total operating expenses',M(opex));
+      R('Net operating income',M(noi));
+      R('Debt service',M(pay));
+      R('Monthly cash flow',M(cf));
+      R('Annual cash flow',M(cf*12));
+      R('','');
+      R('RETURNS','');
+      R('Income after tax & insurance',M(incAfterFixed));
+      R('Cap on purchase + rehab %',capPurch.toFixed(2));
+      R('Cap on all-in %',capAllIn.toFixed(2));
+      R('Cash-on-cash %',isFinite(coc)?coc.toFixed(2):'infinite');
+      R('Return on equity left in %',isFinite(retOnLeft)?retOnLeft.toFixed(2):'infinite');
+      R('Cap on ARV, full opex %',capArv.toFixed(2));
+      R('Yield on cost %',yoc.toFixed(2));
+      R('Break-even rent',isFinite(beRent)?M(beRent):'');
+      R('Break-even occupancy %',breakEvenOcc.toFixed(0));
+      R('Expense ratio %',(egi>0?(opex/egi*100).toFixed(0):''));
+      return r.map(function(x){return x.map(function(c){
+        c=String(c);return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c;}).join(',');}).join('\n');};
     window.__summary=function(){
       var d=new Date().toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'});
       var a=assumedList(), o=[];
@@ -769,7 +824,7 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
   });
   el('clear').addEventListener('click',function(){
     ids.forEach(function(id){var i=el(id);
-      i.value=(id==='units')?1:0;
+      i.value=0;
       i.dataset.src='a';
       var c=i.closest('.f-group').querySelector('.chip');
       c.className='chip a'; c.textContent='assumed';});
@@ -783,6 +838,36 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
     } else {n.textContent='Copy blocked — select the figures instead.';}
     setTimeout(function(){n.textContent='';},4000);
   }
+  function fname(ext){
+    var n=(el('prop').value||'deal').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'-').slice(0,40)||'deal';
+    return n+'-proforma-'+new Date().toISOString().slice(0,10)+'.'+ext;
+  }
+  // the claude.ai viewer mediates saves through a capability; a plain web host does not
+  var dlCap=null;
+  if(window.claude&&typeof window.claude.use==='function'){
+    try{ window.claude.use('downloads').then(function(d){dlCap=d;},function(){}); }catch(e){}
+  }
+  function dl(name,text,type){
+    var n=el('copied');
+    function done(m){n.textContent=m;setTimeout(function(){n.textContent='';},5000);}
+    if(dlCap&&typeof dlCap.save==='function'){
+      dlCap.save({filename:name,data:text}).then(function(){done('Saved as '+name);},
+        function(e){done((e&&e.code==='declined')?'Download cancelled.':'Download unavailable here.');});
+      return;
+    }
+    try{
+      var b=new Blob([text],{type:type||'text/plain;charset=utf-8'});
+      var u=URL.createObjectURL(b), a=document.createElement('a');
+      a.href=u; a.download=name; a.style.display='none';
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){URL.revokeObjectURL(u);a.remove();},1000);
+      done('Saved as '+name);
+    }catch(e){ done('Download blocked here \u2014 open the page in its own tab.'); }
+  }
+  el('dlcsv').addEventListener('click',function(){
+    dl(fname('csv'),'\ufeff'+window.__csv(),'text/csv;charset=utf-8');});
+  el('dltxt').addEventListener('click',function(){
+    dl(fname('txt'),window.__summary(),'text/plain;charset=utf-8');});
   el('copy').addEventListener('click',function(){doCopy(window.__summary(),'Full summary');});
   el('copyshort').addEventListener('click',function(){doCopy(window.__headline(),'Headline');});
   calc();
