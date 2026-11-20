@@ -176,6 +176,12 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
             <input type="number" id="inslandlord" data-src="a" value="2000" step="100"></div>
         </div>
         <div class="sub-note" style="max-width:64ch">Use the county's <b>un-exempted</b> tax figure — the homestead exemption and appraisal cap drop when Paragon takes title as an LLC. Insurance covers both the hold and the rental.</div>
+        <div class="grp-label">At closing</div>
+        <div class="grid" style="margin-top:7px;max-width:230px">
+          <div class="f-group"><div class="lbl"><label for="buyclose">Buy-side title ($)</label></div>
+            <input type="number" id="buyclose" data-src="a" value="3200" step="100">
+            <div class="sub-note">Avant estimate, paid whether you use hard money or cash.</div></div>
+        </div>
         <div class="answer" id="prop-answer"></div>
       </div>
     </section>
@@ -196,19 +202,18 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
           <div class="f-group hm-only"><div class="lbl"><label for="rehabfin">Rehab financed (%)</label></div>
             <input type="number" id="rehabfin" data-src="a" value="0" step="5">
             <div class="sub-note">0 = you fund rehab. Set 100 if Boomerang funds draws.</div></div>
-          <div class="f-group"><div class="lbl"><label for="months">Months to refinance</label></div>
-            <input type="number" id="months" data-src="a" value="5" step="0.5"></div>
-          <div class="f-group"><div class="lbl"><label for="vacmonths">Months with no rent</label></div>
+          <div class="f-group"><div class="lbl"><label for="months">Total months, closing → refi</label></div>
+            <input type="number" id="months" data-src="a" value="5" step="0.5">
+            <div class="sub-note">The whole hold, measured from closing.</div></div>
+          <div class="f-group"><div class="lbl"><label for="vacmonths">Of those, months vacant</label></div>
             <input type="number" id="vacmonths" data-src="a" value="5" step="0.5">
-            <div class="sub-note">Rehab + lease-up. The rest of the hold collects rent.</div></div>
+            <div class="sub-note" id="split-note">Rehab + lease-up. The remainder collects rent.</div></div>
           <div class="f-group hm-only"><div class="lbl"><label for="pts">Origination (pts)</label></div>
             <input type="number" id="pts" data-src="a" value="1" step="0.25"></div>
           <div class="f-group hm-only"><div class="lbl"><label for="rate">Interest (% / yr)</label></div>
             <input type="number" id="rate" data-src="a" value="12" step="0.5"></div>
           <div class="f-group hm-only"><div class="lbl"><label for="docprep">Doc prep ($)</label></div>
             <input type="number" id="docprep" data-src="a" value="995" step="50"></div>
-          <div class="f-group"><div class="lbl"><label for="buyclose">Buy-side title ($)</label></div>
-            <input type="number" id="buyclose" data-src="a" value="3200" step="100"></div>
         </div>
         <div class="answer" id="acq-answer"></div>
       </div>
@@ -251,13 +256,13 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
           <div class="f-group"><div class="lbl"><label for="hoayr">HOA dues ($ / yr)</label></div>
             <input type="number" id="hoayr" data-src="a" value="0" step="50"></div>
           <div class="f-group"><div class="lbl"><label for="vac">Vacancy (%)</label></div>
-            <input type="number" id="vac" data-src="a" value="8" step="1"></div>
+            <input type="number" id="vac" data-src="a" value="0" step="1"></div>
           <div class="f-group"><div class="lbl"><label for="pm">Management (%)</label></div>
-            <input type="number" id="pm" data-src="a" value="8" step="0.5"></div>
+            <input type="number" id="pm" data-src="a" value="0" step="0.5"></div>
           <div class="f-group"><div class="lbl"><label for="maint">Maintenance (%)</label></div>
-            <input type="number" id="maint" data-src="a" value="7" step="1"></div>
+            <input type="number" id="maint" data-src="a" value="0" step="1"></div>
           <div class="f-group"><div class="lbl"><label for="capex">CapEx reserve (%)</label></div>
-            <input type="number" id="capex" data-src="a" value="7" step="1"></div>
+            <input type="number" id="capex" data-src="a" value="0" step="1"></div>
           <div class="f-group"><div class="lbl"><label for="miscm">Lawn / misc ($ / mo)</label></div>
             <input type="number" id="miscm" data-src="a" value="0" step="25"></div>
         </div>
@@ -277,9 +282,9 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
     <div class="stmt"><h3>Returns &amp; sanity checks</h3><div id="s4"></div></div>
   </div>
 
-  <div class="stmt" style="margin-top:14px"><h3>Inside the hold — vacant months vs rented months</h3>
-    <div class="two" style="margin-top:0"><div id="s5a"></div><div id="s5b"></div></div>
-    <div id="s5c"></div>
+  <div class="stmt" style="margin-top:14px"><h3>Cash flow at each stage</h3>
+    <div class="tbl-wrap"><table id="s5"></table></div>
+    <div id="s5c" style="margin-top:12px"></div>
   </div>
 
   <div class="stmt" style="margin-top:14px" id="ltv-block"><h3>What each refi LTV gets you</h3>
@@ -445,7 +450,8 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
           gi('All-in incl. closing',money(allIn))+
           gi('Cash to acquire',money(cashAcq))+
           gi('Cash left in deal',money(cashLeft),cashLeft<=0?'':'warnc')+
-          gi('Monthly cash flow',money(cf),cf>=0?'':'neg')+
+          gi('Cash flow after refi',money(cf),cf>=0?'':'neg')+
+          gi('Cash flow while rented (HM)',money(noi-intMo),(noi-intMo)>=0?'':'neg')+
           gi('Cap on purchase + rehab',pct(capPurch))+
           gi('Property tax / yr',money(taxyr),el('taxyr').dataset.src!=='y'?'warnc':'')+
           gi('Insurance / yr',money(insll),el('inslandlord').dataset.src!=='y'?'warnc':'')+
@@ -488,6 +494,12 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
         '<div class="g-foot">Green is the figure, not a verdict — anything negative or off-target turns red or amber. '+
         assumed+' field'+(assumed===1?' is':'s are')+' still carrying an assumed default.</div>';
     }
+    el('split-note').innerHTML = (months<=0) ? 'Enter the hold length first.'
+      : (vacmonths>months
+          ? '<b>Capped at '+months+'.</b> You cannot be vacant longer than the hold \u2014 counting '+
+            vacantMo+' vacant, 0 rented.'
+          : months+' months from closing = <b>'+vacantMo+' vacant</b> then <b>'+rentedMo+
+            ' collecting rent</b>, and the refi funds at month '+months+'.');
     el('prop-answer').innerHTML=
       tile('Annual income',money(gross*12),'',money(gross)+' / mo')+
       tile('Less tax + insurance',money(taxyr+insll),'neg',money((taxyr+insll)/12)+' / mo')+
@@ -671,44 +683,46 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
     });
     el('s2b').innerHTML=th+'</tbody>';
 
-    h='';
-    h+=row('While vacant — '+vacantMo+' month'+(vacantMo===1?'':'s'),null,{head:true});
-    if(vacantMo<=0){ h+=row('Leased from day one','No vacant period',{c:'pos'}); }
-    else {
-      if(!isCash)h+=row('Hard money interest ('+rate+'%)','−'+money(intMo*vacantMo).replace('−',''));
-      h+=row('Property tax','−'+money(taxM*vacantMo).replace('−',''));
-      h+=row('Insurance','−'+money(insM*vacantMo).replace('−',''));
-      if(hoaM>0)h+=row('HOA dues','−'+money(hoaM*vacantMo).replace('−',''));
-      h+=row('Rent collected','$0');
-      h+=row('Lost while vacant','−'+money(vacLost).replace('−',''),{total:true,c:'neg'});
-      h+=row('Per vacant month','−'+money(burnVacMo).replace('−',''),{c:'neg'});
-    }
-    el('s5a').innerHTML=h;
+    var ongoingLabel = refiOn ? 'After refinance' : (hmLoan>0?'Ongoing, no refi':'Ongoing, no loan');
+    var debtLabel = refiOn ? 'Debt payment (P&I after refi)' : 'Debt payment';
+    var varMo = pmFee+maint+capex+utilm+miscm;
+    var vacCF = -(fixedMo+intMo), rentCF = noi-intMo;
+    function cell(txt,cls){return '<td class="'+(cls||'')+'">'+txt+'</td>';}
+    function srow(label,a,b,c,o){o=o||{};
+      var w=o.b?' style="font-weight:600"':'';
+      return '<tr'+w+'>'+'<td>'+label+'</td>'+cell(a,o.ca)+cell(b,o.cb)+cell(c,o.cc)+'</tr>';}
+    var t='<thead><tr><th>Per month</th><th>Vacant</th><th>Rented, hard money</th><th>'+ongoingLabel+
+          '</th></tr></thead><tbody>';
+    t+=srow('Months',vacantMo+' mo',rentedMo+' mo','ongoing');
+    t+=srow('Rent collected','$0',money(gross),money(gross));
+    t+=srow('Vacancy allowance ('+vac+'%)','$0','−'+money(vacLoss).replace('−',''),
+            '−'+money(vacLoss).replace('−',''));
+    t+=srow('Management, maintenance, CapEx','$0','−'+money(varMo).replace('−',''),
+            '−'+money(varMo).replace('−',''));
+    t+=srow('Property tax, insurance'+(hoaM>0?', HOA':''),'−'+money(fixedMo).replace('−',''),
+            '−'+money(fixedMo).replace('−',''),'−'+money(fixedMo).replace('−',''));
+    t+=srow('Net operating income',money(-fixedMo),money(noi),money(noi),
+            {b:1,ca:'neg',cb:noi>=0?'pos':'neg',cc:noi>=0?'pos':'neg'});
+    t+=srow(debtLabel,intMo>0?'−'+money(intMo).replace('−',''):'$0',
+            intMo>0?'−'+money(intMo).replace('−',''):'$0',
+            pay>0?'−'+money(pay).replace('−',''):'$0');
+    t+=srow('Monthly cash flow',money(vacCF),money(rentCF),money(cf),
+            {b:1,ca:vacCF>=0?'pos':'neg',cb:rentCF>=0?'pos':'neg',cc:cf>=0?'pos':'neg'});
+    t+=srow('Total for the period','−'+money(vacLost).replace('−',''),
+            rentedMo>0?money(rentedNet):'—',money(cf*12)+' / yr',
+            {b:1,ca:'neg',cb:rentedNet>=0?'pos':'neg',cc:cf>=0?'pos':'neg'});
+    el('s5').innerHTML=t+'</tbody>';
 
     h='';
-    h+=row('While rented — '+rentedMo+' month'+(rentedMo===1?'':'s'),null,{head:true});
-    if(rentedMo<=0){ h+=row('No rented months','Vacant the whole hold',{c:'warnc'}); }
-    else {
-      h+=row('Gross rent',money(gross*rentedMo));
-      h+=row('Vacancy allowance ('+vac+'%)','−'+money(vacLoss*rentedMo).replace('−',''));
-      h+=row('Management, maintenance, CapEx','−'+money((pmFee+maint+capex+utilm+miscm)*rentedMo).replace('−',''));
-      h+=row('Property tax, insurance'+(hoaM>0?', HOA':''),'−'+money(fixedMo*rentedMo).replace('−',''));
-      h+=row('Net operating income',money(noi*rentedMo),{total:true,c:noi>=0?'pos':'neg'});
-      if(!isCash)h+=row('Hard money interest ('+rate+'%)','−'+money(intMo*rentedMo).replace('−',''));
-      h+=row(rentedNet>=0?'Earned while rented':'Lost while rented',money(rentedNet),
-             {total:true,c:rentedNet>=0?'pos':'neg'});
-      h+=row('Per rented month',money(rentedNet/rentedMo),{c:rentedNet>=0?'pos':'neg'});
-    }
-    el('s5b').innerHTML=h;
-
-    h='';
-    h+=row('The two together',null,{head:true});
+    h+=row('Through the whole hold',null,{head:true});
     h+=row('Lost while vacant ('+vacantMo+' mo)',money(vacLost),{c:'neg'});
     h+=row((rentedNet>=0?'Less earned while rented (':'Plus lost while rented (')+rentedMo+' mo)',
            (rentedNet>=0?'−':'')+money(Math.abs(rentedNet)),{c:rentedNet>=0?'pos':'neg'});
-    h+=row(burn>=0?'Net cost of the hold':'Net gain over the hold',money(Math.abs(burn)),
+    h+=row(burn>=0?'Net cost of the hold — added to basis':'Net gain over the hold',money(Math.abs(burn)),
            {total:true,c:burn>=0?'neg':'pos'});
-    h+=row('Added to your basis',money(burn),{c:burn>=0?'neg':'pos'});
+    h+=row('After the refinance',null,{head:true});
+    h+=row('Out of pocket — your money still in the deal',money(cashLeft),{total:true,c:cashLeft<=0?'pos':''});
+    h+=row('Monthly cash flow from here on',money(cf),{c:cf>=0?'pos':'neg'});
     el('s5c').innerHTML=h;
 
 
@@ -933,4 +947,4 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
   el('copyshort').addEventListener('click',function(){doCopy(window.__headline(),'Headline');});
   calc();
 })();
-  </script>
+</script>
