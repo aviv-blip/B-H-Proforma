@@ -198,6 +198,9 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
             <div class="sub-note">0 = you fund rehab. Set 100 if Boomerang funds draws.</div></div>
           <div class="f-group"><div class="lbl"><label for="months">Months to refinance</label></div>
             <input type="number" id="months" data-src="a" value="5" step="0.5"></div>
+          <div class="f-group"><div class="lbl"><label for="vacmonths">Months with no rent</label></div>
+            <input type="number" id="vacmonths" data-src="a" value="5" step="0.5">
+            <div class="sub-note">Rehab + lease-up. The rest of the hold collects rent.</div></div>
           <div class="f-group hm-only"><div class="lbl"><label for="pts">Origination (pts)</label></div>
             <input type="number" id="pts" data-src="a" value="1" step="0.25"></div>
           <div class="f-group hm-only"><div class="lbl"><label for="rate">Interest (% / yr)</label></div>
@@ -274,6 +277,11 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
     <div class="stmt"><h3>Returns &amp; sanity checks</h3><div id="s4"></div></div>
   </div>
 
+  <div class="stmt" style="margin-top:14px"><h3>Inside the hold — vacant months vs rented months</h3>
+    <div class="two" style="margin-top:0"><div id="s5a"></div><div id="s5b"></div></div>
+    <div id="s5c"></div>
+  </div>
+
   <div class="stmt" style="margin-top:14px" id="ltv-block"><h3>What each refi LTV gets you</h3>
     <div class="tbl-wrap"><table id="s2b"></table></div>
     <div class="hint">Cash back is what the refinance hands you after the hard money payoff and its own costs. Out of pocket is what stays in the property for good.</div>
@@ -297,7 +305,7 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
 
 <script>
 (function(){
-  var ids=['purchase','rehab','months','arv','ltv','rehabfin','pts','rate','docprep','buyclose',
+  var ids=['purchase','rehab','months','vacmonths','arv','ltv','rehabfin','pts','rate','docprep','buyclose',
            'refiltv','refirate','refiterm','refipts','reficlose','tdscr',
            'rent','taxyr','inslandlord','hoayr','vac','pm','maint','capex','miscm'];
   function el(id){return document.getElementById(id);}
@@ -350,27 +358,40 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
         buyclose=v('buyclose'),
         refiltv=v('refiltv'),refirate=v('refirate'),refiterm=v('refiterm'),refipts=v('refipts'),
         reficlose=v('reficlose'),tdscr=v('tdscr'),
-        rent=v('rent'),taxyr=v('taxyr'),
+        vacmonths=v('vacmonths'),rent=v('rent'),taxyr=v('taxyr'),
         insll=v('inslandlord'),hoayr=v('hoayr'),
         vac=v('vac'),pmp=v('pm'),maintp=v('maint'),capexp=v('capex'),miscm=v('miscm');
     var units=1, other=0, utilm=0, utilhold=0, insvac=insll;
 
+    // monthly operating figures — needed by the hold as well as the stabilized view
+    var gross=rent*units+other, vacLoss=gross*vac/100, egi=gross-vacLoss;
+    var pmFee=egi*pmp/100, maint=gross*maintp/100, capex=gross*capexp/100;
+    var taxM=taxyr/12, insM=insll/12, hoaM=hoayr/12;
+    var opex=pmFee+maint+capex+taxM+insM+hoaM+utilm+miscm;
+    var noi=egi-opex;
+
     // 01 acquisition — computed for both methods so each can be read against the other
     var isCash=(method==='cash');
-    var taxHold=taxyr/12*months, insHold=insvac/12*months, hoaHold=hoayr/12*months, utilHold=utilhold*months;
-    var carry=taxHold+insHold+hoaHold+utilHold;
+    var vacantMo=Math.min(Math.max(0,vacmonths),months), rentedMo=Math.max(0,months-vacantMo);
+    var fixedMo=taxM+insM+hoaM;
+    var taxHold=vacantMo*taxM, insHold=vacantMo*insM, hoaHold=vacantMo*hoaM;
+    var vacCarry=vacantMo*fixedMo, rentCredit=rentedMo*noi;
     function acq(cash){
       var lp=cash?0:purchase*ltv/100, rf=cash?0:rehab*rehabfin/100, hl=lp+rf;
-      var o=cash?0:hl*pts/100, dp=cash?0:docprep, it=cash?0:hl*(rate/100/12)*months;
-      return {loan:hl,down:purchase-lp,rehabCash:rehab-rf,orig:o,doc:dp,interest:it,
-        cashAcq:(purchase-lp)+(rehab-rf)+o+dp+buyclose+it+carry,
-        allIn:purchase+rehab+o+dp+buyclose+it+carry};
+      var o=cash?0:hl*pts/100, dp=cash?0:docprep;
+      var im=cash?0:hl*(rate/100/12), it=im*months;
+      var hold=it+vacCarry-rentCredit;
+      return {loan:hl,down:purchase-lp,rehabCash:rehab-rf,orig:o,doc:dp,interest:it,intMo:im,hold:hold,
+        cashAcq:(purchase-lp)+(rehab-rf)+o+dp+buyclose+hold,
+        allIn:purchase+rehab+o+dp+buyclose+hold};
     }
     var A=acq(isCash), B=acq(!isCash);
     var hmLoan=A.loan, down=A.down, rehabCash=A.rehabCash, orig=A.orig, hmInterest=A.interest;
     var docprepEff=A.doc, cashAcq=A.cashAcq, allIn=A.allIn;
     var capital=down+rehabCash, fees=orig+docprepEff+buyclose;
-    var burn=hmInterest+taxHold+insHold+hoaHold+utilHold;
+    var intMo=A.intMo;
+    var vacLost=vacantMo*(intMo+fixedMo), rentedNet=rentedMo*(noi-intMo);
+    var burn=A.hold, burnVacMo=intMo+fixedMo;
     var burnMo=months>0?burn/months:0;
 
     // 02 refinance
@@ -383,11 +404,7 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
     var pay=refiOn?pmt(newLoan,refirate,refiterm):(hmLoan*(rate/100/12));
 
     // 03 operations
-    var gross=rent*units+other, vacLoss=gross*vac/100, egi=gross-vacLoss;
-    var pmFee=egi*pmp/100, maint=gross*maintp/100, capex=gross*capexp/100;
-    var taxM=taxyr/12, insM=insll/12, hoaM=hoayr/12;
-    var opex=pmFee+maint+capex+taxM+insM+hoaM+utilm+miscm;
-    var noi=egi-opex, cf=noi-pay;
+    var cf=noi-pay;
     var pitia=pay+taxM+insM+hoaM;
     var piLabel='PITI'+(hoaM>0?'A':'');
     var overPiti=gross-pitia;
@@ -445,9 +462,10 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
           gi('Equity after refi',money(equity)),true)+
         gsec('Getting it done — '+(isCash?'all cash':'hard money'),
           gi('Cash to acquire',money(cashAcq))+
-          gi('Lost over the hold',money(burn),'neg')+
-          gi('Burn per month',money(burnMo),'neg')+
-          gi('Months to refi',months+' mo','plain'))+
+          gi(burn>=0?'Lost over the hold':'Earned over the hold',money(Math.abs(burn)),burn>=0?'neg':'pos')+
+          gi('Cost per vacant month',money(burnVacMo),'neg')+
+          gi('Hold',months+' mo','plain')+
+          gi('Vacant / rented',vacantMo+' / '+rentedMo+' mo','plain'))+
         gsec(refiOn?'The refinance':'No refinance — straight hold',
           gi(refiOn?'New loan at '+refiltv+'%':'Debt outstanding',money(refiOn?newLoan:hmLoan))+
           gi('Cash back at refi',refiOn?money(proceeds):'None',refiOn&&proceeds<0?'neg':(refiOn?'':'plain'))+
@@ -500,7 +518,8 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
       (isCash?tile('Acquisition loan','None','','bought with cash')
              :tile('Hard money loan',money(hmLoan),'',ltv+'% of price'+(rehabfin>0?' + rehab draws':'')))+
       tile('Cash to acquire',money(cashAcq),'','before any refi proceeds')+
-      tile('Lost during the hold',money(burn),'neg',money(burnMo)+' / mo with no rent')+
+      tile(burn>=0?'Lost during the hold':'Earned during the hold',money(Math.abs(burn)),burn>=0?'neg':'pos',
+           money(burnVacMo)+' / mo while vacant')+
       tile('All-in basis',money(allIn),arv>0&&allIn/arv<=0.75?'pos':'warnc',
            arv>0?pct(allIn/arv*100)+' of ARV':'enter ARV');
     el('refi-answer').innerHTML= !refiOn ?
@@ -538,13 +557,11 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
     }
     h+=row('Buy-side title / escrow',money(buyclose));
     h+=row('Fees subtotal',money(fees),{total:true,c:'neg'});
-    h+=row('Lost over the '+months+'-month hold — no rent coming in',null,{head:true});
-    if(!isCash)h+=row('Hard money interest ('+months+' mo @ '+rate+'%)',money(hmInterest));
-    h+=row('Property tax ('+months+' mo)',money(taxHold));
-    h+=row('Insurance ('+months+' mo)',money(insHold));
-    if(hoaHold>0)h+=row('HOA dues ('+months+' mo)',money(hoaHold));
-    h+=row('Holding loss subtotal',money(burn),{total:true,c:'neg'});
-    h+=row('Burn per month of delay',money(burnMo),{c:'neg'});
+    h+=row('The '+months+'-month hold — '+vacantMo+' mo vacant, '+rentedMo+' mo rented',null,{head:true});
+    h+=row('Lost while vacant',money(vacLost),{c:'neg'});
+    if(rentedMo>0)h+=row('Earned while rented','−'+money(rentedNet).replace('−',''),{c:rentedNet>=0?'pos':'neg'});
+    h+=row('Net cost of the hold',money(burn),{total:true,c:burn>=0?'neg':'pos'});
+    h+=row('Cost per vacant month',money(burnVacMo),{c:'neg'});
     h+=row('Cash required to acquire',money(cashAcq),{total:true});
     h+=row('All-in cost basis',money(allIn));
     h+=row('All-in as % of ARV',pct(arv>0?allIn/arv*100:0));
@@ -654,6 +671,46 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
     });
     el('s2b').innerHTML=th+'</tbody>';
 
+    h='';
+    h+=row('While vacant — '+vacantMo+' month'+(vacantMo===1?'':'s'),null,{head:true});
+    if(vacantMo<=0){ h+=row('Leased from day one','No vacant period',{c:'pos'}); }
+    else {
+      if(!isCash)h+=row('Hard money interest ('+rate+'%)','−'+money(intMo*vacantMo).replace('−',''));
+      h+=row('Property tax','−'+money(taxM*vacantMo).replace('−',''));
+      h+=row('Insurance','−'+money(insM*vacantMo).replace('−',''));
+      if(hoaM>0)h+=row('HOA dues','−'+money(hoaM*vacantMo).replace('−',''));
+      h+=row('Rent collected','$0');
+      h+=row('Lost while vacant','−'+money(vacLost).replace('−',''),{total:true,c:'neg'});
+      h+=row('Per vacant month','−'+money(burnVacMo).replace('−',''),{c:'neg'});
+    }
+    el('s5a').innerHTML=h;
+
+    h='';
+    h+=row('While rented — '+rentedMo+' month'+(rentedMo===1?'':'s'),null,{head:true});
+    if(rentedMo<=0){ h+=row('No rented months','Vacant the whole hold',{c:'warnc'}); }
+    else {
+      h+=row('Gross rent',money(gross*rentedMo));
+      h+=row('Vacancy allowance ('+vac+'%)','−'+money(vacLoss*rentedMo).replace('−',''));
+      h+=row('Management, maintenance, CapEx','−'+money((pmFee+maint+capex+utilm+miscm)*rentedMo).replace('−',''));
+      h+=row('Property tax, insurance'+(hoaM>0?', HOA':''),'−'+money(fixedMo*rentedMo).replace('−',''));
+      h+=row('Net operating income',money(noi*rentedMo),{total:true,c:noi>=0?'pos':'neg'});
+      if(!isCash)h+=row('Hard money interest ('+rate+'%)','−'+money(intMo*rentedMo).replace('−',''));
+      h+=row(rentedNet>=0?'Earned while rented':'Lost while rented',money(rentedNet),
+             {total:true,c:rentedNet>=0?'pos':'neg'});
+      h+=row('Per rented month',money(rentedNet/rentedMo),{c:rentedNet>=0?'pos':'neg'});
+    }
+    el('s5b').innerHTML=h;
+
+    h='';
+    h+=row('The two together',null,{head:true});
+    h+=row('Lost while vacant ('+vacantMo+' mo)',money(vacLost),{c:'neg'});
+    h+=row((rentedNet>=0?'Less earned while rented (':'Plus lost while rented (')+rentedMo+' mo)',
+           (rentedNet>=0?'−':'')+money(Math.abs(rentedNet)),{c:rentedNet>=0?'pos':'neg'});
+    h+=row(burn>=0?'Net cost of the hold':'Net gain over the hold',money(Math.abs(burn)),
+           {total:true,c:burn>=0?'neg':'pos'});
+    h+=row('Added to your basis',money(burn),{c:burn>=0?'neg':'pos'});
+    el('s5c').innerHTML=h;
+
 
     function padr(t,n){t=String(t);return t.length>=n?t:t+new Array(n-t.length+1).join(' ');}
     function padl(t,n){t=String(t);return t.length>=n?t:new Array(n-t.length+1).join(' ')+t;}
@@ -708,9 +765,12 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
       R('Buy-side title',M(buyclose));
       R('Capital subtotal',M(capital));
       R('Fees subtotal',M(fees));
-      R('Holding loss subtotal',M(burn));
-      R('Burn per month',M(burnMo));
+      R('Net cost of the hold',M(burn));
+      R('Cost per vacant month',M(burnVacMo));
       R('Months held',months);
+      R('Months with no rent',vacantMo);
+      R('Months rented during hold',rentedMo);
+      R('Net rent collected during hold',M(rentCredit));
       R('Cash required to acquire',M(cashAcq));
       R('','');
       R(refiOn?'THE REFINANCE':'NO REFINANCE','');
@@ -779,7 +839,8 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
       o.push('GETTING IT DONE  ('+(isCash?'all cash':'hard money')+')');
       if(!isCash)o.push(L('Hard money loan',money(hmLoan),ltv+'% of price'));
       o.push(L('Cash to acquire',money(cashAcq)));
-      o.push(L('Lost over '+months+'-mo hold',money(burn),money(burnMo)+'/mo'));
+      o.push(L((burn>=0?'Lost over ':'Earned over ')+months+'-mo hold',money(Math.abs(burn)),
+               vacantMo+' mo vacant, '+rentedMo+' rented'));
       o.push('');
       if(refiOn){
         o.push('THE REFINANCE');
@@ -872,4 +933,4 @@ footer{margin-top:28px;font-size:12px;color:var(--fg-muted);border-top:1px solid
   el('copyshort').addEventListener('click',function(){doCopy(window.__headline(),'Headline');});
   calc();
 })();
-</script>
+  </script>
